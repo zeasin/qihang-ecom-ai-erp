@@ -212,10 +212,19 @@ public class TokenService
      */
     private String getToken(HttpServletRequest request)
     {
+        // 从请求头获取token
         String token = request.getHeader("Authorization");
         if (StringUtils.isNotEmpty(token) && token.startsWith(Constants.TOKEN_PREFIX))
         {
             token = token.replace(Constants.TOKEN_PREFIX, "");
+        }
+        // 如果请求头中没有token，从URL参数获取
+        if (StringUtils.isEmpty(token)) {
+            token = request.getParameter("token");
+            // 处理URL参数中的token，确保没有Bearer前缀
+            if (StringUtils.isNotEmpty(token) && token.startsWith(Constants.TOKEN_PREFIX)) {
+                token = token.replace(Constants.TOKEN_PREFIX, "");
+            }
         }
         return token;
     }

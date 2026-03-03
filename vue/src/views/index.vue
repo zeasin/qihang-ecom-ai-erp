@@ -124,6 +124,7 @@
 
 <script>
 import { todayDaily } from "@/api/report/report";
+import { getToken } from "@/utils/auth";
 
 export default {
   name: 'Index',
@@ -161,13 +162,77 @@ export default {
         salesVolume: 0,
         orderCount: 0,
         shopCount: 0
-      }
+      },
+      sse: null,
+      clientId: '',
+      isSseConnected: false,
+      isLoading: false
     }
   },
   mounted() {
     this.loadSystemStats();
+    this.initSse();
+  },
+  beforeDestroy() {
+    this.closeSse();
   },
   methods: {
+    initSse() {
+      // 生成唯一客户端ID
+      this.clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      // 获取token
+      const token = getToken();
+      
+      // 建立SSE连接，携带token
+      this.sse = new EventSource(`${process.env.VUE_APP_BASE_API}/api/sse/connect?clientId=${this.clientId}&token=${token}`);
+      
+      // 监听连接成功
+      this.sse.addEventListener('connected', (event) => {
+        console.log('SSE连接成功:', event.data);
+        this.isSseConnected = true;
+      });
+      
+      // 监听消息
+      this.sse.addEventListener('message', (event) => {
+        console.log('收到SSE消息:', event.data);
+        // 移除正在思考的消息
+        if (this.isLoading) {
+          this.messages = this.messages.filter(msg => !msg.isLoading);
+          this.isLoading = false;
+        }
+        // 添加实际回复消息
+        this.messages.push({
+          content: event.data,
+          time: this.formatTime(new Date()),
+          isMe: false,
+          avatar: ''
+        });
+        this.scrollToBottom();
+      });
+      
+      // 监听心跳
+      this.sse.addEventListener('heartbeat', (event) => {
+        console.log('收到心跳:', event.data);
+      });
+      
+      // 监听错误
+      this.sse.onerror = (error) => {
+        console.error('SSE连接错误:', error);
+        this.isSseConnected = false;
+        // 尝试重连
+        setTimeout(() => {
+          this.initSse();
+        }, 5000);
+      };
+    },
+    
+    closeSse() {
+      if (this.sse) {
+        this.sse.close();
+        this.sse = null;
+      }
+    },
+    
     sendMessage() {
       if (!this.inputMessage.trim()) return;
       
@@ -179,10 +244,38 @@ export default {
         avatar: ''
       });
       
-      // 模拟助手回复
-      setTimeout(() => {
+      // 显示正在思考的loading效果
+      this.isLoading = true;
+      this.messages.push({
+        content: '正在思考...',
+        time: this.formatTime(new Date()),
+        isMe: false,
+        avatar: '',
+        isLoading: true
+      });
+      
+      // 获取token
+      const token = getToken();
+      
+      // 通过SSE发送消息到后端
+      if (this.isSseConnected) {
+        // 使用fetch发送消息
+        fetch(`${process.env.VUE_APP_BASE_API}/api/sse/send?clientId=${this.clientId}&message=${encodeURIComponent(this.inputMessage)}&token=${token}`)
+          .then(response => response.text())
+          .then(data => {
+            console.log('消息发送结果:', data);
+          })
+          .catch(error => {
+            console.error('消息发送失败:', error);
+            // 发送失败时使用模拟回复
+            this.generateReply(this.inputMessage);
+            this.isLoading = false;
+          });
+      } else {
+        // SSE未连接时使用模拟回复
         this.generateReply(this.inputMessage);
-      }, 1000);
+        this.isLoading = false;
+      }
       
       this.inputMessage = '';
       this.scrollToBottom();

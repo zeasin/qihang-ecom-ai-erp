@@ -42,11 +42,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-//        String token = exchange.getRequest().getHeaders().getFirst(TOKEN_HEADER);
-        String token = request.getHeader("Authorization");
         String url = request.getRequestURI();
         log.info("intercept " + url);
-//        log.info("token: " + token); || request.getRequestURI().equals("/getInfo") || request.getRequestURI().equals("/logout")
         if (request.getRequestURI().equals("/login")
                 || request.getRequestURI().contains("/login")
                 || request.getRequestURI().contains("/captchaImage")
@@ -55,8 +52,9 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 || request.getRequestURI().contains("/system/config")
                 || request.getRequestURI().contains("/swagger-ui")
                 || request.getRequestURI().contains("/v3/api-docs")
+                || request.getRequestURI().contains("/api/sse/")
         ) {
-            // 登录页面，放行 || request.getRequestURI().equals("/order/get_detail")
+            // 登录页面，放行
             chain.doFilter(request, response);
             return;
         }
@@ -66,11 +64,17 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, null, loginUser.getAuthorities());
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            chain.doFilter(request, response);
         } else {
-            fallback(" 授权过期！aaaa", response);
-            return;
+            // 对于SSE连接，不要尝试写入错误信息，因为响应已经开始发送
+            if (url.contains("/api/sse/connect")) {
+                // 直接返回，让SSE连接自然断开
+                return;
+            } else {
+                fallback(" 授权过期！", response);
+                return;
+            }
         }
-        chain.doFilter(request, response);
     }
 
     private void fallback(String message, HttpServletResponse response) {
