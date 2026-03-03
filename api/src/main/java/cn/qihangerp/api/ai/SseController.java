@@ -98,12 +98,20 @@ public class SseController {
         HttpResponse<String> createSessionResponse = client.send(createSessionRequest, HttpResponse.BodyHandlers.ofString());
         String sessionId = parseSessionId(createSessionResponse.body());
         
-        // 2. 向会话发送消息
-        String requestBody = "{\"parts\": [{\"type\": \"text\", \"text\": \"" + message + "\"}]}";
+        // 2. 构建消息请求体
+        JSONObject requestBody = new JSONObject();
+        JSONArray parts = new JSONArray();
+        JSONObject part = new JSONObject();
+        part.put("type", "text");
+        part.put("text", message);
+        parts.add(part);
+        requestBody.put("parts", parts);
+        
+        // 3. 向会话发送消息
         HttpRequest sendMessageRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:14967/session/" + sessionId + "/message"))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toJSONString()))
                 .build();
         
         // 发送请求并获取响应
@@ -130,11 +138,23 @@ public class SseController {
     private String parseAIResponse(String responseBody) {
         log.info("=================AI回复==========");
         log.info(responseBody);
-        // 简单解析JSON，提取AI回复
-        JSONObject jsonObject = JSONObject.parseObject(responseBody);
-        JSONArray jsonArray = jsonObject.getJSONArray("parts");
+        try {
+            // 解析响应，提取AI回复
+            JSONObject jsonObject = JSONObject.parseObject(responseBody);
+            if (jsonObject.containsKey("info")) {
+                JSONArray parts = jsonObject.getJSONArray("parts");
+                for (int i = 0; i < parts.size(); i++) {
+                    JSONObject part = parts.getJSONObject(i);
+                    if (part.containsKey("text")) {
+                        return part.getString("text");
+                    }
+                }
 
-        return jsonArray.getJSONObject(2).getString("text");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "无法获取AI回复";
     }
 
     @GetMapping("/disconnect")
