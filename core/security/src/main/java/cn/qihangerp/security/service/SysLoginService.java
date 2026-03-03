@@ -46,6 +46,9 @@ public class SysLoginService
     @Autowired
     private ISysUserService userService;
 
+    @Autowired
+    private RemoteServerKeyService remoteServerKeyService;
+
 //    @Autowired
 //    private SysConfigService configService;
 
@@ -60,6 +63,10 @@ public class SysLoginService
      */
     public String login(String username, String password, String code, String uuid)
     {
+        // 远程服务器密钥验证
+        if (!remoteServerKeyService.isAuthorized()) {
+            throw new ServiceException("远程服务器密钥验证失败或已过期，无法登录！");
+        }
         // 验证码校验
         validateCaptcha(username, code, uuid);
         // 登录前置校验

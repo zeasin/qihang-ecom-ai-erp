@@ -29,4 +29,14 @@ public interface SystemConstants {
      */
     String SYSTEM_CONFIG_IP_QPS_LIMIT_KEY = "IP_QPS_THRESHOLD_LIMIT";
 
+    /**
+     * 系统配置 远程服务器密钥的KEY
+     */
+    String SYSTEM_CONFIG_REMOTE_SERVER_KEY = "REMOTE_SERVER_KEY";
+
+    /**
+     * 系统配置 远程服务器密钥过期时间的KEY
+     */
+    String SYSTEM_CONFIG_REMOTE_SERVER_KEY_EXPIRE = "REMOTE_SERVER_KEY_EXPIRE";
+
 }

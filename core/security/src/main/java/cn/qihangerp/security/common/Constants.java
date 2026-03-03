@@ -105,4 +105,14 @@ public class Constants
      */
     public static final String[] JOB_ERROR_STR = { "java.net.URL", "javax.naming.InitialContext", "org.yaml.snakeyaml",
             "org.springframework", "org.apache", "com.zhijian.common.utils.file", "com.zhijian.common.config" };
+
+    /**
+     * 远程服务器密钥配置
+     */
+    public static final String REMOTE_SERVER_KEY = "REMOTE_SERVER_KEY";
+
+    /**
+     * 远程服务器密钥过期时间配置
+     */
+    public static final String REMOTE_SERVER_KEY_EXPIRE = "REMOTE_SERVER_KEY_EXPIRE";
 }

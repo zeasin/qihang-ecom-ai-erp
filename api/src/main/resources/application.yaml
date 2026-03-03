@@ -6,7 +6,7 @@ spring:
     # 国际化资源文件路径
     basename: i18n/messages
   application:
-    name: qihangerp-open
+    name: qihangerp-ai
   data:
     # redis 配置
     redis:
@@ -82,3 +82,6 @@ springdoc:
     path: /swagger-ui.html        # 设置Swagger UI的访问路径
     url: /v3/api-docs
 
+REMOTE_SERVER_KEY: nbID7P77CTyq4W3C3CnwXVbSxTlkntDmjuO6riOVonq
+REMOTE_SERVER_KEY_EXPIRE: 1772635543000
+REMOTE_AUTH_SERVER_URL: https://qihangerp.cn/api/license/validate
